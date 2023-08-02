@@ -19,7 +19,7 @@ import dev.svitan.smc.ui.theme.SMCTheme
 import io.ktor.client.*
 import io.ktor.client.engine.cio.*
 import io.ktor.client.plugins.contentnegotiation.*
-import io.ktor.client.plugins.logging.*
+//import io.ktor.client.plugins.logging.*
 import io.ktor.client.plugins.websocket.*
 import io.ktor.http.*
 import io.ktor.serialization.kotlinx.json.*
@@ -29,12 +29,12 @@ import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 
 @OptIn(DelicateCoroutinesApi::class)
-class MainActivity() : ComponentActivity() {
+class MainActivity : ComponentActivity() {
     private val client: HttpClient = HttpClient(CIO) {
-        install(Logging) {
-            logger = Logger.DEFAULT
-            level = LogLevel.INFO
-        }
+//        install(Logging) {
+//            logger = Logger.DEFAULT
+//            level = LogLevel.INFO
+//        }
         install(ContentNegotiation) {
             json()
         }
@@ -42,12 +42,21 @@ class MainActivity() : ComponentActivity() {
             pingInterval = 15_000
         }
     }
+    private var connected = false
 
 
     init {
         GlobalScope.launch {
-            client.webSocket(method = HttpMethod.Get, host = "127.0.0.1", port = 8080, path = "/ws") {
-                send("Hello World!")
+            try {
+                client.webSocket(method = HttpMethod.Get, host = "5.tcp.eu.ngrok.io", port = 14956, path = "/ws") {
+                    connected = true
+                    send("Hello World!")
+
+                    Log.i("MainActivity", (incoming.receive() as Frame.Text).readText())
+                    close(CloseReason(CloseReason.Codes.NORMAL, "adios"))
+                }
+            } catch (err: Exception) {
+                Log.e("MainActivity", err.toString())
             }
         }
     }
@@ -64,7 +73,11 @@ class MainActivity() : ComponentActivity() {
                     ) {
                         Text(stringResource(R.string.welcome), fontSize = 22.sp, textAlign = TextAlign.Center)
                         Spacer(modifier = Modifier.height(8.dp))
-                        Text(stringResource(R.string.connecting), fontSize = 18.sp, textAlign = TextAlign.Center)
+                        Text(
+                            stringResource(if (connected) R.string.connected else R.string.connecting),
+                            fontSize = 18.sp,
+                            textAlign = TextAlign.Center
+                        )
                     }
                 }
             }
