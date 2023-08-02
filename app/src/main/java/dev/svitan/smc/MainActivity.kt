@@ -5,21 +5,19 @@ import android.util.Log
 import android.view.KeyEvent
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import androidx.navigation.compose.rememberNavController
+import dev.svitan.smc.ui.screens.HomeScreen
 import dev.svitan.smc.ui.theme.SMCTheme
+import dev.svitan.smc.ui.views.AppViewModel
 import io.ktor.client.*
 import io.ktor.client.engine.cio.*
 import io.ktor.client.plugins.contentnegotiation.*
-//import io.ktor.client.plugins.logging.*
 import io.ktor.client.plugins.websocket.*
 import io.ktor.http.*
 import io.ktor.serialization.kotlinx.json.*
@@ -31,10 +29,6 @@ import kotlinx.coroutines.launch
 @OptIn(DelicateCoroutinesApi::class)
 class MainActivity : ComponentActivity() {
     private val client: HttpClient = HttpClient(CIO) {
-//        install(Logging) {
-//            logger = Logger.DEFAULT
-//            level = LogLevel.INFO
-//        }
         install(ContentNegotiation) {
             json()
         }
@@ -42,42 +36,41 @@ class MainActivity : ComponentActivity() {
             pingInterval = 15_000
         }
     }
-    private var connected = false
+    private val viewModel = AppViewModel()
+
+    companion object {
+        private const val TAG = "MainActivity"
+    }
 
 
     init {
         GlobalScope.launch {
-            try {
+            val result = runCatching {
                 client.webSocket(method = HttpMethod.Get, host = "5.tcp.eu.ngrok.io", port = 14956, path = "/ws") {
-                    connected = true
+                    viewModel.setConnected(true)
                     send("Hello World!")
 
-                    Log.i("MainActivity", (incoming.receive() as Frame.Text).readText())
+                    Log.i(TAG, (incoming.receive() as Frame.Text).readText())
                     close(CloseReason(CloseReason.Codes.NORMAL, "adios"))
                 }
-            } catch (err: Exception) {
-                Log.e("MainActivity", err.toString())
+            }
+
+            if (result.isFailure) {
+                Log.e(TAG, result.exceptionOrNull().toString())
             }
         }
     }
 
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
+            val navController = rememberNavController()
+
             SMCTheme {
                 Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
-                    Column(
-                        modifier = Modifier.padding(16.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.Center
-                    ) {
-                        Text(stringResource(R.string.welcome), fontSize = 22.sp, textAlign = TextAlign.Center)
-                        Spacer(modifier = Modifier.height(8.dp))
-                        Text(
-                            stringResource(if (connected) R.string.connected else R.string.connecting),
-                            fontSize = 18.sp,
-                            textAlign = TextAlign.Center
-                        )
+                    NavHost(navController = navController, startDestination = "home") {
+                        composable("home") { HomeScreen() }
                     }
                 }
             }
@@ -87,7 +80,8 @@ class MainActivity : ComponentActivity() {
     override fun onKeyDown(keyCode: Int, event: KeyEvent?): Boolean {
         when (keyCode) {
             KeyEvent.KEYCODE_VOLUME_DOWN, KeyEvent.KEYCODE_VOLUME_UP -> {
-                Log.i("MainActivity", "Pressed down")
+                Log.i(TAG, "Pressed down")
+                viewModel.setPressed(false)
                 return true
             }
         }
@@ -98,7 +92,8 @@ class MainActivity : ComponentActivity() {
     override fun onKeyUp(keyCode: Int, event: KeyEvent?): Boolean {
         when (keyCode) {
             KeyEvent.KEYCODE_VOLUME_DOWN, KeyEvent.KEYCODE_VOLUME_UP -> {
-                Log.i("MainActivity", "Pressed up")
+                Log.i(TAG, "Pressed up")
+                viewModel.setPressed(true)
                 return true
             }
         }
