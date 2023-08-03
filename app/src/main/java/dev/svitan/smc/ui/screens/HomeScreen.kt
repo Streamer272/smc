@@ -12,6 +12,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import dev.svitan.smc.ui.views.AppViewModel
 import dev.svitan.smc.R
+import dev.svitan.smc.ui.views.ConnectionState
 
 @Composable
 fun HomeScreen() {
@@ -26,7 +27,13 @@ fun HomeScreen() {
         Text(stringResource(R.string.welcome), fontSize = 22.sp, textAlign = TextAlign.Center)
         Spacer(modifier = Modifier.height(8.dp))
         Text(
-            stringResource(if (connected.value) R.string.connected else R.string.connecting),
+            stringResource(
+                when (connected.value) {
+                    ConnectionState.Connecting -> R.string.connecting
+                    ConnectionState.Connected -> R.string.connected
+                    ConnectionState.Error -> R.string.connectionError
+                }
+            ),
             fontSize = 18.sp,
             textAlign = TextAlign.Center
         )

@@ -1,6 +1,7 @@
 <resources>
-    <string name="app_name">SMC</string>
+    <string name="app_name" translatable="false">SMC</string>
     <string name="welcome">Welcome to the Secretive Morse Code Communication Application</string>
     <string name="connecting">Connecting to servers...</string>
     <string name="connected">Connnected to servers</string>
+    <string name="connectionError">Couldn\'t connect to servers</string>
 </resources>
