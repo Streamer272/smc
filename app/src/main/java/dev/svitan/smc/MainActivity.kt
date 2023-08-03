@@ -48,7 +48,9 @@ class MainActivity : ComponentActivity() {
     init {
         GlobalScope.launch {
             val result = runCatching {
-                client.webSocket(method = HttpMethod.Get, host = "2.tcp.eu.ngrok.io", port = 19641, path = "/ws") {
+                Log.d(TAG, "Connecting")
+                client.webSocket(method = HttpMethod.Get, host = "0.tcp.eu.ngrok.io", port = 16755, path = "/ws") {
+                    Log.d(TAG, "Connected")
                     viewModel.setConnected(ConnectionState.Connected)
 
                     val sendJob = launch {
@@ -104,7 +106,7 @@ class MainActivity : ComponentActivity() {
     override fun onKeyDown(keyCode: Int, event: KeyEvent?): Boolean {
         when (keyCode) {
             KeyEvent.KEYCODE_VOLUME_DOWN, KeyEvent.KEYCODE_VOLUME_UP -> {
-                Log.i(TAG, "Pressed down")
+                Log.d(TAG, "Pressed down")
                 viewModel.setPressed(false)
                 return true
             }
@@ -116,7 +118,7 @@ class MainActivity : ComponentActivity() {
     override fun onKeyUp(keyCode: Int, event: KeyEvent?): Boolean {
         when (keyCode) {
             KeyEvent.KEYCODE_VOLUME_DOWN, KeyEvent.KEYCODE_VOLUME_UP -> {
-                Log.i(TAG, "Pressed up")
+                Log.d(TAG, "Pressed up")
                 viewModel.setPressed(true)
                 return true
             }

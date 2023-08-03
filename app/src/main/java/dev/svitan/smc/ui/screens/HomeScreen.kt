@@ -1,9 +1,9 @@
 package dev.svitan.smc.ui.screens
 
+import android.util.Log
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
@@ -13,12 +13,26 @@ import androidx.compose.ui.unit.sp
 import dev.svitan.smc.R
 import dev.svitan.smc.ui.components.SMCScaffold
 import dev.svitan.smc.ui.views.AppViewModel
-import dev.svitan.smc.ui.views.ConnectionState
+import kotlinx.coroutines.launch
 
 @Composable
 fun HomeScreen() {
-    val viewModel = AppViewModel()
-    val connected = viewModel.connectedFlow.collectAsState()
+    val viewModel = remember { AppViewModel() }
+    val scope = rememberCoroutineScope()
+    val connected by viewModel.connectedFlow.collectAsState(scope)
+
+    LaunchedEffect(viewModel.connectedFlow) {
+        viewModel.connectedFlow.collect {
+            Log.i("HomeScreen", "!!!!!!!!!!!!!!!!!!!!!! $it !!!!!!!!!!!!!!!!!!!")
+        }
+    }
+
+    val another = AppViewModel()
+    LaunchedEffect(another) {
+        another.connectedFlow.collect {
+            Log.i("HomeScreen", "<<<<<<<<<<<<<<<< $it >>>>>>>>>>>>>>")
+        }
+    }
 
     SMCScaffold { contentPadding ->
         Column(
@@ -29,14 +43,7 @@ fun HomeScreen() {
             Text(stringResource(R.string.welcome), fontSize = 22.sp, textAlign = TextAlign.Center)
             Spacer(modifier = Modifier.height(8.dp))
             Text(
-                text = stringResource(
-                    when (connected.value) {
-                        ConnectionState.Connecting -> R.string.connecting
-                        ConnectionState.Connected -> R.string.connected
-                        ConnectionState.Error -> R.string.connectionError
-                        ConnectionState.Closed -> R.string.connectionClosed
-                    }
-                ),
+                text = "$connected / ${viewModel.connectedFlow.collectAsState()}",
                 fontSize = 18.sp,
                 textAlign = TextAlign.Center
             )
