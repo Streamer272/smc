@@ -8,7 +8,6 @@ import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
-import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Modifier
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -66,7 +65,7 @@ class MainActivity : ComponentActivity() {
                             val pressed = message.readText() == "1"
                             Log.i(TAG, "Received pressed $pressed")
 
-                            if (viewModel.vibratingFlow.collectAsState().value != pressed) {
+                            if (viewModel.vibratingFlow.value != pressed) {
                                 viewModel.setVibrating(pressed)
                             }
                         }

@@ -4,4 +4,5 @@
     <string name="connecting">Connecting to servers...</string>
     <string name="connected">Connnected to servers</string>
     <string name="connectionError">Couldn\'t connect to servers</string>
+    <string name="connectionClosed">Connection to servers closed</string>
 </resources>
