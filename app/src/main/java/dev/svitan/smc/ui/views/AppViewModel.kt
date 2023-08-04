@@ -9,5 +9,4 @@ enum class ConnectionState {
     Closed,
 }
 
-class AppViewModel : ViewModel() {
-}
+class AppViewModel : ViewModel()
