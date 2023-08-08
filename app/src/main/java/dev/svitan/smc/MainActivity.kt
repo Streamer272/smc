@@ -14,11 +14,11 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import dev.svitan.smc.ui.screens.HomeScreen
 import dev.svitan.smc.ui.theme.SMCTheme
-import dev.svitan.smc.ui.views.ConnectionState
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.runBlocking
 
 class MainActivity : ComponentActivity() {
-    private var setConnection: (ConnectionState) -> Unit = {}
-    private var setPressed: (Boolean) -> Unit = {}
+    private val pressed = Channel<Boolean>()
 
     companion object {
         private const val TAG = "MainActivity"
@@ -29,12 +29,13 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         setContent {
             val navController = rememberNavController()
+            Log.d(TAG, "Passing flow $pressed")
 
             SMCTheme {
                 Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
                     NavHost(navController = navController, startDestination = "home") {
                         composable("home") {
-                            HomeScreen()
+                            HomeScreen(pressed)
                         }
                     }
                 }
@@ -46,7 +47,8 @@ class MainActivity : ComponentActivity() {
         when (keyCode) {
             KeyEvent.KEYCODE_VOLUME_DOWN, KeyEvent.KEYCODE_VOLUME_UP -> {
                 Log.d(TAG, "Pressed down")
-                setPressed(true)
+                pressed.trySend(true)
+                Log.d(TAG, "Pressed down emitted")
                 return true
             }
         }
@@ -58,16 +60,12 @@ class MainActivity : ComponentActivity() {
         when (keyCode) {
             KeyEvent.KEYCODE_VOLUME_DOWN, KeyEvent.KEYCODE_VOLUME_UP -> {
                 Log.d(TAG, "Pressed up")
-                setPressed(true)
+                pressed.trySend(false)
+                Log.d(TAG, "Pressed up emitted")
                 return true
             }
         }
 
         return super.onKeyUp(keyCode, event)
-    }
-
-    override fun onDestroy() {
-        setConnection(ConnectionState.Closed)
-        super.onDestroy()
     }
 }
