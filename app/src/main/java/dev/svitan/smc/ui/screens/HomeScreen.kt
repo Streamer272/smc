@@ -31,7 +31,6 @@ fun HomeScreen(pressed: Channel<Boolean>) {
     var connection by remember { mutableStateOf(ConnectionState.Connecting) }
     var vibrating by remember { mutableStateOf(false) }
     var onDisconnected by remember { mutableStateOf({}) }
-    val scope = rememberCoroutineScope()
     val TAG = "HomeScreen"
 
 
@@ -44,55 +43,51 @@ fun HomeScreen(pressed: Channel<Boolean>) {
         }
     }
 
-    fun connect() {
-        scope.launch {
-            Log.d(TAG, "Connecting")
-            val result = runCatching {
-                client.webSocket(method = HttpMethod.Get, host = "5.tcp.eu.ngrok.io", port = 16076, path = "/ws") {
-                    Log.d(TAG, "Connected")
-                    connection = ConnectionState.Connected
+    LaunchedEffect(pressed) {
+        Log.d(TAG, "Connecting")
+        val result = runCatching {
+            client.webSocket(method = HttpMethod.Get, host = "5.tcp.eu.ngrok.io", port = 16076, path = "/ws") {
+                Log.d(TAG, "Connected")
+                connection = ConnectionState.Connected
 
-                    val sendJob = launch {
-                        Log.d(TAG, "sendJob started")
-                        while (!pressed.isClosedForReceive) {
-                            val received = pressed.receive()
+                val sendJob = launch {
+                    Log.d(TAG, "sendJob started")
+                    while (!pressed.isClosedForReceive) {
+                        val received = pressed.receive()
 
-                            Log.d(TAG, "Sending $received")
-                            send(if (received) "1" else "0")
-                        }
-                        Log.d(TAG, "sendJob ended")
+                        Log.d(TAG, "Sending $received")
+                        send(if (received) "1" else "0")
                     }
-                    val receiveJob = launch {
-                        while (true) {
-                            val message = incoming.receive()
-                            if (message !is Frame.Text) continue
+                    Log.d(TAG, "sendJob ended")
+                }
+                val receiveJob = launch {
+                    while (true) {
+                        val message = incoming.receive()
+                        if (message !is Frame.Text) continue
 
-                            val value = message.readText() == "1"
-                            Log.i(TAG, "Received pressed $value")
+                        val value = message.readText() == "1"
+                        Log.i(TAG, "Received pressed $value")
 
-                            vibrating = value
-                        }
+                        vibrating = value
                     }
+                }
 
-                    onDisconnected = {
-                        sendJob.cancel()
-                        receiveJob.cancel()
-                        runBlocking {
-                            close(CloseReason(CloseReason.Codes.NORMAL, "adios"))
-                        }
+                onDisconnected = {
+                    sendJob.cancel()
+                    receiveJob.cancel()
+                    runBlocking {
+                        close(CloseReason(CloseReason.Codes.NORMAL, "adios"))
                     }
                 }
             }
+        }
 
-            Log.d(TAG, "After connect with result (isFailure) ${result.isFailure}")
-            if (result.isFailure) {
-                connection = ConnectionState.Error
-                Log.i(TAG, "Couldn't connect (cause: ${result.exceptionOrNull().toString()})")
-            }
+        Log.d(TAG, "After connect with result (isFailure) ${result.isFailure}")
+        if (result.isFailure) {
+            connection = ConnectionState.Error
+            Log.i(TAG, "Couldn't connect (cause: ${result.exceptionOrNull().toString()})")
         }
     }
-
-    connect()
 
     SMCScaffold { contentPadding ->
         Column(
